@@ -103,8 +103,10 @@ class PickColorCommand(sublime_plugin.TextCommand):
         return (r+g+b)
 
     def __hexstr_to_bgr(self, hexstr):
-        a = 0
+        if len(hexstr) == 3:
+            hexstr = hexstr[0] + hexstr[0] + hexstr[1] + hexstr[1] + hexstr[2] + hexstr[2]
+            
         r = int(hexstr[0:2], 16)
         g = int(hexstr[2:4], 16)
         b = int(hexstr[4:6], 16)
-        return (a << 24) | (b << 16)| (g << 8) | r
+        return (b << 16)| (g << 8) | r
