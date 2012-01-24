@@ -1,6 +1,6 @@
 **Windows only**
 
-![Windows](http://i.minus.com/ihwLvn8m29GxZ.png "Windows")
+![Windows](http://i42.tinypic.com/2lku3jt.png "Windows")
 
 
 ## Installation
