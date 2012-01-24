@@ -2,37 +2,48 @@ import sublime, sublime_plugin
 import ctypes
 from ctypes import c_int32, c_uint32, c_void_p, c_wchar_p, pointer, POINTER
 
-class CHOOSECOLOR(ctypes.Structure):
-     _fields_ = [('lStructSize', c_uint32),
-                 ('hwndOwner', c_void_p),
-                 ('hInstance', c_void_p),
-                 ('rgbResult', c_uint32),
-                 ('lpCustColors',POINTER(c_uint32)),
-                 ('Flags', c_uint32),
-                 ('lCustData', c_void_p),
-                 ('lpfnHook', c_void_p),
-                 ('lpTemplateName', c_wchar_p)]
+if sublime.platform() == 'windows':
+    class CHOOSECOLOR(ctypes.Structure):
+         _fields_ = [('lStructSize', c_uint32),
+                     ('hwndOwner', c_void_p),
+                     ('hInstance', c_void_p),
+                     ('rgbResult', c_uint32),
+                     ('lpCustColors',POINTER(c_uint32)),
+                     ('Flags', c_uint32),
+                     ('lCustData', c_void_p),
+                     ('lpfnHook', c_void_p),
+                     ('lpTemplateName', c_wchar_p)]
 
-CustomColorArray = c_uint32 * 16
-CC_SOLIDCOLOR = 0x80
-CC_RGBINIT = 0x01
-CC_FULLOPEN = 0x02
+    CustomColorArray = c_uint32 * 16
+    CC_SOLIDCOLOR = 0x80
+    CC_RGBINIT = 0x01
+    CC_FULLOPEN = 0x02
 
-ChooseColorW = ctypes.windll.Comdlg32.ChooseColorW
-ChooseColorW.argtypes = [POINTER(CHOOSECOLOR)]
-ChooseColorW.restype = c_int32
+    ChooseColorW = ctypes.windll.Comdlg32.ChooseColorW
+    ChooseColorW.argtypes = [POINTER(CHOOSECOLOR)]
+    ChooseColorW.restype = c_int32
 
 class PickColorCommand(sublime_plugin.TextCommand):
     def run(self, edit):
+        if sublime.platform() != 'windows': 
+            sublime.error_message('Sorry, this plugin is for Windows only')
+            return
+
         sel = self.view.sel()
         start_color = None
 
-        # get the currently selected color - if any
         if len(sel) > 0:
-            selected = self.view.substr(self.view.word(sel[0])).strip()
+            # try selecting highlighted text first
+            selected = self.view.substr(sel[0]).strip()
             if selected.startswith('#'): selected = selected[1:]
             if self.__is_valid_hex_color(selected):
                 start_color = self.__hexstr_to_bgr(selected)
+            else:
+                # else try selecting by word
+                selected = self.view.substr(self.view.word(sel[0])).strip()
+                if selected.startswith('#'): selected = selected[1:]
+                if self.__is_valid_hex_color(selected):
+                    start_color = self.__hexstr_to_bgr(selected)
 
         s = sublime.load_settings("ColorPicker.sublime-settings")
         custom_colors = s.get("custom_colors", ['0']*16)
