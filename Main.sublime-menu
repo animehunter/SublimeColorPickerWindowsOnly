@@ -1,0 +1,10 @@
+[
+{
+    "id": "tools",
+    "children":
+    [
+        { "caption": "-", "id": "user-sep-edit" },
+        { "command": "pick_color", "caption": "Pick Color" }
+    ]
+}
+]
