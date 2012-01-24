@@ -2,7 +2,7 @@
     "schema_version": "1.1",
     "packages": [
         {
-            "name": "Color Picker",
+            "name": "ColorPicker",
             "author": "animehunter",
             "description": "Pick and insert CSS colors",
             "homepage": "https://github.com/animehunter/SublimeColorPickerWindowsOnly",
