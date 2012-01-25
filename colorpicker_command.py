@@ -14,6 +14,10 @@ if sublime.platform() == 'windows':
                      ('lpfnHook', c_void_p),
                      ('lpTemplateName', c_wchar_p)]
 
+    class POINT(ctypes.Structure):
+         _fields_ = [('x', c_int32),
+                     ('y', c_int32)]
+
     CustomColorArray = c_uint32 * 16
     CC_SOLIDCOLOR = 0x80
     CC_RGBINIT = 0x01
@@ -23,8 +27,24 @@ if sublime.platform() == 'windows':
     ChooseColorW.argtypes = [POINTER(CHOOSECOLOR)]
     ChooseColorW.restype = c_int32
 
+    GetDC = ctypes.windll.User32.GetDC
+    GetDC.argtypes = [c_void_p]
+    GetDC.restype = c_void_p
+
+    ReleaseDC = ctypes.windll.User32.ReleaseDC
+    ReleaseDC.argtypes = [c_void_p, c_void_p] #hwnd, hdc
+    ReleaseDC.restype = c_int32
+
+    GetCursorPos = ctypes.windll.User32.GetCursorPos
+    GetCursorPos.argtypes = [POINTER(POINT)] # POINT
+    GetCursorPos.restype = c_int32
+
+    GetPixel = ctypes.windll.Gdi32.GetPixel
+    GetPixel.argtypes = [c_void_p, c_int32, c_int32] # hdc, x, y
+    GetPixel.restype = c_uint32 # colorref
+
 class PickColorCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
+    def run(self, edit, paste=False):
         if sublime.platform() != 'windows': 
             sublime.error_message('Sorry, this plugin is for Windows only')
             return
@@ -57,10 +77,10 @@ class PickColorCommand(sublime_plugin.TextCommand):
         cc.lStructSize = ctypes.sizeof(cc)
         cc.hwndOwner = self.view.window().hwnd()
         cc.Flags = CC_SOLIDCOLOR | CC_FULLOPEN | CC_RGBINIT
-        cc.rgbResult = c_uint32(start_color) if start_color else c_uint32(0)
+        cc.rgbResult = c_uint32(start_color) if not paste and start_color else self.__get_pixel()
         cc.lpCustColors = self.__to_custom_color_array(custom_colors)
 
-        if ChooseColorW(ctypes.byref(cc)):
+        if paste or ChooseColorW(ctypes.byref(cc)):
             color = self.__bgr_to_hexstr(cc.rgbResult)
             for region in sel:
                 word = self.view.word(region)
@@ -73,7 +93,15 @@ class PickColorCommand(sublime_plugin.TextCommand):
 
         custom_colors = self.__from_custom_color_array(cc.lpCustColors)
         s.set('custom_colors', custom_colors)
-        sublime.save_settings("ColorPicker.sublime-settings")
+        if not paste: sublime.save_settings("ColorPicker.sublime-settings")
+
+    def __get_pixel(self):
+        hdc = GetDC(0)
+        pos = POINT()
+        GetCursorPos(ctypes.byref(pos))
+        val = GetPixel(hdc, pos.x, pos.y)
+        ReleaseDC(0, hdc)
+        return val
 
     def __to_custom_color_array(self, custom_colors):
         cc = CustomColorArray()
@@ -105,7 +133,7 @@ class PickColorCommand(sublime_plugin.TextCommand):
     def __hexstr_to_bgr(self, hexstr):
         if len(hexstr) == 3:
             hexstr = hexstr[0] + hexstr[0] + hexstr[1] + hexstr[1] + hexstr[2] + hexstr[2]
-            
+
         r = int(hexstr[0:2], 16)
         g = int(hexstr[2:4], 16)
         b = int(hexstr[4:6], 16)

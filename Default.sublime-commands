@@ -1,6 +1,11 @@
 [
     {
-        "caption": "Pick: Color",
+        "caption": "Pick Color: Open Dialog",
         "command": "pick_color"
+    },
+    {
+        "caption": "Pick Color: Paste Color",
+        "command": "pick_color",
+        "args": {"paste" : "true"} 
     }
 ]
