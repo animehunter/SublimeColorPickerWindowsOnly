@@ -24,3 +24,5 @@ To paste the selected color, use:
 
 ## Commands
 * `pick_color`: Insert or change a selected color. Arguments: if `paste` is true it will skip over the color editor dialog.
+
+## Testing
